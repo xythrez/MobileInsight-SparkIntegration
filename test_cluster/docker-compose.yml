@@ -1,0 +1,70 @@
+services:
+  spark-master:
+    image: "mobileinsight-spark:latest"
+    build:
+      context: .
+      args:
+        MAX_THREADS: "${BUILD_MAX_THREADS:-1}"
+    env_file: .env
+    environment:
+      - SPARK_LOCAL_IP=spark-master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_NO_DAEMONIZE=1
+    ports:
+      - "${SPARK_WEBUI_PORT:-8080}:8080"
+      - "${SPARK_MASTER_PORT:-7077}:7077"
+    command: /opt/spark/sbin/start-master.sh
+  spark-worker-1:
+    image: "mobileinsight-spark:latest"
+    build:
+      context: .
+      args:
+        MAX_THREADS: "${BUILD_MAX_THREADS:-1}"
+    env_file: .env
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_LOCAL_IP=spark-worker-1
+      - SPARK_WORKER_PORT=7077
+      - SPARK_NO_DAEMONIZE=1
+      - "SPARK_WORKER_CORES=${EXECUTORS_PER_WORKER:-1}"
+      - "SPARK_WORKER_MEMORY=${MEMORY_PER_WORKER:-1G}"
+    command: /opt/spark/sbin/start-worker.sh spark://spark-master:7077
+    volumes:
+      - "${HOME:-/home}:${HOME:-/home}"
+  spark-worker-2:
+    image: "mobileinsight-spark:latest"
+    build:
+      context: .
+      args:
+        MAX_THREADS: "${BUILD_MAX_THREADS:-1}"
+    env_file: .env
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_LOCAL_IP=spark-worker-2
+      - SPARK_WORKER_PORT=7077
+      - SPARK_NO_DAEMONIZE=1
+      - "SPARK_WORKER_CORES=${EXECUTORS_PER_WORKER:-1}"
+      - "SPARK_WORKER_MEMORY=${MEMORY_PER_WORKER:-1G}"
+    command: /opt/spark/sbin/start-worker.sh spark://spark-master:7077
+    volumes:
+      - "${HOME:-/home}:${HOME:-/home}"
+  spark-worker-3:
+    image: "mobileinsight-spark:latest"
+    build:
+      context: .
+      args:
+        MAX_THREADS: "${BUILD_MAX_THREADS:-1}"
+    env_file: .env
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_LOCAL_IP=spark-worker-3
+      - SPARK_WORKER_PORT=7077
+      - SPARK_NO_DAEMONIZE=1
+      - "SPARK_WORKER_CORES=${EXECUTORS_PER_WORKER:-1}"
+      - "SPARK_WORKER_MEMORY=${MEMORY_PER_WORKER:-1G}"
+    command: /opt/spark/sbin/start-worker.sh spark://spark-master:7077
+    volumes:
+      - "${HOME:-/home}:${HOME:-/home}"
