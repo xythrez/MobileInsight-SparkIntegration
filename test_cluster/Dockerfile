@@ -3,7 +3,7 @@ FROM apache/spark:3.5.1-scala2.12-java17-python3-r-ubuntu
 ARG MAX_THREADS=1
 ARG WS_VER=3.4.0
 ARG MI_BRANCH=4b204e0
-ARG WIRESHARK_URL=http://www.mobileinsight.net/wireshark-${WS_VER}-rbc-dissector.tar.xz
+ARG WIRESHARK_URL=https://github.com/wireshark/wireshark/archive/refs/tags/v${WS_VER}.tar.gz
 ADD 00-cpp_compat.patch /build/00-cpp_compat.patch
 
 USER root:root
@@ -19,6 +19,7 @@ RUN set -ex; \
             bison \
             flex \
             python3-matplotlib \
+            python3-pandas \
             libglib2.0-dev \
             libpcap-dev \
             libgcrypt-dev \
