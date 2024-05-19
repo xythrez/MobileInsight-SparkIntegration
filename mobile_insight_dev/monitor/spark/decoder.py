@@ -1,5 +1,5 @@
 import os
-import pickle
+import dill as pickle
 from io import BytesIO
 from pyspark.sql import SparkSession, Row
 from pyspark.sql.types import (

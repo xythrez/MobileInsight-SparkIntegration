@@ -1,20 +1,30 @@
 import os
+import dill as pickle
 from threading import Lock
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import posexplode
 from pyspark.sql.types import (
+    ArrayType,
+    BinaryType,
+    LongType,
+    MapType,
+    StringType,
     StructType,
     StructField,
-    StringType,
     TimestampType,
-    LongType,
-    BinaryType,
-    ArrayType,
 )
 
 from mobile_insight.monitor import OfflineReplayer
+from . import group_by, gather_by
 from .decoder import SparkDecoder
+from .submonitor import SparkSubmonitor
 
+
+def collect(self):
+    return self.source.spark_results[self]
+
+def _ret_self(x):
+    return x
 
 class SparkReplayer(OfflineReplayer):
     '''Spark-backend OfflineReplayer
@@ -50,6 +60,9 @@ class SparkReplayer(OfflineReplayer):
 
         self._sampling_rate = -1
         self._output_path = None
+        self._partition_function = group_by.file_path
+        self._analyzer_info = {}
+        self.spark_results = {}
 
     def __del__(self):
         # Decrease reference on garbage collection
@@ -81,23 +94,42 @@ class SparkReplayer(OfflineReplayer):
         self._output_path = path
 
     def set_partition_function(self, func):
-        pass
+        self._partition_function = func
 
-    def set_gather_function(self, func):
-        pass
+    def register(self, analyzer, init_args=None, collect_func=None,
+                 export_func=None):
+        OfflineReplayer.register(self, analyzer)
+        if init_args is None:
+            init_args = []
+        if collect_func is None:
+            collect_func = gather_by.grouped_tasks
+        if export_func is None:
+            export_func = _ret_self
+        if analyzer not in self._analyzer_info:
+            self._analyzer_info[analyzer] = (id(analyzer), analyzer.__class__,
+                                             init_args, collect_func,
+                                             export_func)
+            analyzer.collect = collect.__get__(analyzer, analyzer.__class__)
+
+    def set_analyzer_callbacks(self, analyzer, init_args=None,
+                               collect_func=None, export_func=None):
+        if analyzer in self._analyzer_info:
+            curr = self._analyzer_info[analyzer]
+            self._analyzer_info[analyzer] = (
+                id(analyzer),
+                analyzer.__class__,
+                init_args if init_args is not None else curr[1],
+                collect_func if collect_func is not None else curr[2],
+                export_func if export_func is not None else curr[3]
+            )
+
+    def deregister(self, analyzer):
+        OfflineReplayer.deregister(self, analyzer)
+        if analyzer in self._analyzer_info:
+            self._analyzer_info.pop(analyzer)
 
     def run(self):
-        # Collect data from both qmdl and mi2logs
-        logs = (SparkReplayer
-                ._spark.read.format("binaryFile")
-                .option("pathGlobFilter", "*.qmdl")
-                .load(self._input_path))
-        logs = logs.union(SparkReplayer
-                          ._spark.read.format("binaryFile")
-                          .option("pathGlobFilter", "*.mi2log")
-                          .load(self._input_path))
-
-        schema = StructType([
+        decoded_schema = StructType([
             StructField('file_path', StringType(), False),
             StructField('file_mtime', TimestampType(), False),
             StructField('file_packets', LongType(), False),
@@ -108,23 +140,38 @@ class SparkReplayer(OfflineReplayer):
             ])), False),
         ])
 
-        decoded = logs.rdd.map(lambda x:
-                               SparkDecoder(os.path.basename(x.path),
-                                            self._output_path,
-                                            self._sampling_rate,
-                                            self._type_names,
-                                            self._skip_decoding)
-                               .decode(x)).toDF(schema)
-        decoded = (decoded.select(decoded['*'], posexplode(decoded.content))
+        # Collect data from both qmdl and mi2logs
+        logs = (SparkReplayer
+                ._spark.read.format("binaryFile")
+                .option("pathGlobFilter", "*.qmdl")
+                .load(self._input_path)
+                .union(SparkReplayer
+                       ._spark.read.format("binaryFile")
+                       .option("pathGlobFilter", "*.mi2log")
+                       .load(self._input_path)))
+
+        # Decode files
+        decoded = (logs.rdd.map(lambda x:
+                                SparkDecoder(os.path.basename(x.path),
+                                             self._output_path,
+                                             self._sampling_rate,
+                                             self._type_names,
+                                             self._skip_decoding).decode(x))
+                   .toDF(decoded_schema)
+                   .select('*', posexplode('content'))
                    .drop('content')
                    .withColumnRenamed('pos', 'order')
                    .select('*', 'col.timestamp', 'col.type_id', 'col.packet')
                    .drop('col'))
 
+        # Partition the data, then launch submonitors and collect results
+        results = (self._partition_function(decoded).applyInPandas(
+            lambda x: SparkSubmonitor(list(self._analyzer_info.values()))
+            .run(x), '_ int, obj map<long, binary>')
+                   .drop('_'))
 
-
-        # TODO: Distribute tasks
-        # TODO: Spawn a stateful submonitor for each task
-        # TODO: Collect results
-
-        decoded.show(n=10, truncate=False)
+        for analyzer, tup in self._analyzer_info.items():
+            analyzer_id, _, _, collect_func, _ = tup
+            self.spark_results[analyzer] = collect_func([
+                pickle.loads(x['result']) for x in results.select('obj.' + str(
+                    analyzer_id)).toDF('result').collect()])

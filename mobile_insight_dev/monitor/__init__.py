@@ -10,7 +10,10 @@ def has_module(name):
         return False
 
 
-if has_module('pyspark'):
+if (has_module('pyspark')
+        and has_module('pandas')
+        and has_module('pyarrow')
+        and has_module('dill')):
     __all__ += [
         'SparkReplayer'
     ]

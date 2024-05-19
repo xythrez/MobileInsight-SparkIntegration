@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ["analyzer", "monitor"]
+__all__ = ["monitor"]
 
-from . import analyzer
 from . import monitor

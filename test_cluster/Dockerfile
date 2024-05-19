@@ -23,7 +23,8 @@ RUN set -ex; \
             libglib2.0-dev \
             libpcap-dev \
             libgcrypt-dev \
-            libc-ares-dev;
+            libc-ares-dev; \
+    pip3 install pyspark[sql]==3.5.1 dill==0.3.8;
 
 # Download resources
 RUN set -ex; \
