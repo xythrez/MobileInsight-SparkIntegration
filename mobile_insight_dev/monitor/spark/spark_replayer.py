@@ -172,6 +172,9 @@ class SparkReplayer(OfflineReplayer):
                    .select('*', 'col.timestamp', 'col.type_id', 'col.packet')
                    .drop('col'))
 
+        # Force eager evaluation to ensure side-effects occur (save-to-disk)
+        decoded.cache().count()
+
         # Partition the data, then launch submonitors and collect results
         results = (self._partition_function(decoded).applyInPandas(
             lambda x: SparkSubmonitor(list(self._analyzer_info.values()))
