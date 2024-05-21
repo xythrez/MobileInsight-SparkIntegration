@@ -12,6 +12,7 @@ from pyspark.sql.types import (
 )
 
 from mobile_insight.element import Element
+from mobile_insight.monitor import OfflineReplayer
 from mobile_insight.monitor.dm_collector import (
     dm_collector_c,
     DMLogPacket,
@@ -19,7 +20,7 @@ from mobile_insight.monitor.dm_collector import (
 )
 
 
-class SparkDecoder(Element):
+class SparkDecoder(OfflineReplayer):
     '''Single file decoder
 
     Do not use this class directly
@@ -27,6 +28,8 @@ class SparkDecoder(Element):
 
     def __init__(self, name, output_dir, sampling_rate, type_names,
                  skip_decoding):
+        OfflineReplayer.__init__(self)
+
         # set_sampling_rate() if called in parent
         if (sampling_rate > 0):
             dm_collector_c.set_sampling_rate(sampling_rate)
@@ -74,13 +77,10 @@ class SparkDecoder(Element):
                         # Based on the current implementation, the DMLogPacket
                         # should be safe to pickle.
                         #
-                        # if this changes in the future, either because it has
-                        # state or the cache dicts are actually being used
-                        # (which increases the size of the binary obj), switch
-                        # to pickling packet._decoded_list instead.
+                        # For extra safety, use the _decoded_list argument.
                         packets.append((packet.decode()['timestamp'],
                                         type_id,
-                                        pickle.dumps(packet)))
+                                        pickle.dumps(decoded[0])))
 
                 except FormatError as e:
                     # skip this packet

@@ -23,8 +23,10 @@ from .submonitor import SparkSubmonitor
 def collect(self):
     return self.source.spark_results[self]
 
+
 def _ret_self(x):
     return x
+
 
 class SparkReplayer(OfflineReplayer):
     '''Spark-backend OfflineReplayer

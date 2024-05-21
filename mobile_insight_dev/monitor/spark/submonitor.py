@@ -3,8 +3,11 @@ import timeit
 import dill as pickle
 import pandas as pd
 
-from mobile_insight.monitor import OfflineReplayer
 from mobile_insight.element import Event
+from mobile_insight.monitor import OfflineReplayer
+from mobile_insight.monitor.dm_collector import (
+    DMLogPacket,
+)
 
 class SparkSubmonitor(OfflineReplayer):
     '''Internal per-task sub-monitor
@@ -29,8 +32,8 @@ class SparkSubmonitor(OfflineReplayer):
 
         # Dispatch events
         for _, row in data.iterrows():
-            packet = pickle.loads(row['packet'])
-            event = (timeit.default_timer(), row['type_id'], packet)
+            packet = DMLogPacket(pickle.loads(row['packet']))
+            event = Event(timeit.default_timer(), row['type_id'], packet)
             self.send(event)
 
         # Collect results - serialize the result obj
