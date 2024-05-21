@@ -15,6 +15,9 @@ if (has_module('pyspark')
         and has_module('pyarrow')
         and has_module('dill')):
     __all__ += [
-        'SparkReplayer'
+        'SparkReplayer',
+        'group_by',
+        'collect_by',
     ]
+    from .spark import group_by, collect_by
     from .spark.spark_replayer import SparkReplayer

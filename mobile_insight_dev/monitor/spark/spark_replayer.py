@@ -15,7 +15,7 @@ from pyspark.sql.types import (
 )
 
 from mobile_insight.monitor import OfflineReplayer
-from . import group_by, gather_by
+from . import group_by, collect_by
 from .decoder import SparkDecoder
 from .submonitor import SparkSubmonitor
 
@@ -62,7 +62,7 @@ class SparkReplayer(OfflineReplayer):
 
         self._sampling_rate = -1
         self._output_path = None
-        self._partition_function = group_by.file_path
+        self._group_function = group_by.file_path
         self._analyzer_info = {}
         self.spark_results = {}
 
@@ -95,8 +95,8 @@ class SparkReplayer(OfflineReplayer):
         os.makedirs(path, exist_ok=True)
         self._output_path = path
 
-    def set_partition_function(self, func):
-        self._partition_function = func
+    def set_group_function(self, func):
+        self._group_function = func
 
     def register(self, analyzer, init_args=None, collect_func=None,
                  export_func=None):
@@ -104,7 +104,7 @@ class SparkReplayer(OfflineReplayer):
         if init_args is None:
             init_args = []
         if collect_func is None:
-            collect_func = gather_by.grouped_tasks
+            collect_func = collect_by.grouped_tasks
         if export_func is None:
             export_func = _ret_self
         if analyzer not in self._analyzer_info:
@@ -176,7 +176,7 @@ class SparkReplayer(OfflineReplayer):
         decoded.cache().count()
 
         # Partition the data, then launch submonitors and collect results
-        results = (self._partition_function(decoded).applyInPandas(
+        results = (self._group_function(decoded).applyInPandas(
             lambda x: SparkSubmonitor(list(self._analyzer_info.values()))
             .run(x), '_ int, obj map<long, binary>')
                    .drop('_'))

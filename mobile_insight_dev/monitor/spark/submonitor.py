@@ -17,8 +17,8 @@ class SparkSubmonitor(OfflineReplayer):
     '''
 
     def __init__(self, analyzer_info):
-        OfflineReplayer.__init__(self)
         Analyzer.reset()
+        OfflineReplayer.__init__(self)
         self.analyzers = {}
         for analyzer_id, analyzer_cls, init_args, _, export_func in \
                 analyzer_info:
