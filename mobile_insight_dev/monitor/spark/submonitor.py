@@ -4,6 +4,7 @@ import dill as pickle
 import pandas as pd
 
 from mobile_insight.element import Event
+from mobile_insight.analyzer import Analyzer
 from mobile_insight.monitor import OfflineReplayer
 from mobile_insight.monitor.dm_collector import (
     DMLogPacket,
@@ -17,6 +18,7 @@ class SparkSubmonitor(OfflineReplayer):
 
     def __init__(self, analyzer_info):
         OfflineReplayer.__init__(self)
+        Analyzer.reset()
         self.analyzers = {}
         for analyzer_id, analyzer_cls, init_args, _, export_func in \
                 analyzer_info:
