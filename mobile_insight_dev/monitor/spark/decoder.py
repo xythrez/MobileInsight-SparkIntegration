@@ -12,7 +12,6 @@ from pyspark.sql.types import (
 )
 
 from mobile_insight.element import Element
-from mobile_insight.monitor import OfflineReplayer
 from mobile_insight.monitor.dm_collector import (
     dm_collector_c,
     DMLogPacket,
@@ -20,7 +19,7 @@ from mobile_insight.monitor.dm_collector import (
 )
 
 
-class SparkDecoder(OfflineReplayer):
+class SparkDecoder(Element):
     '''Single file decoder
 
     Do not use this class directly
@@ -28,7 +27,8 @@ class SparkDecoder(OfflineReplayer):
 
     def __init__(self, name, output_dir, sampling_rate, type_names,
                  skip_decoding):
-        OfflineReplayer.__init__(self)
+        Element.__init__(self)
+        DMLogPacket.init({})
 
         # set_sampling_rate() if called in parent
         if (sampling_rate > 0):

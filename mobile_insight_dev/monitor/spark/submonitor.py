@@ -27,6 +27,13 @@ class SparkSubmonitor(OfflineReplayer):
             self.analyzers[analyzer_id] = (analyzer, export_func)
             analyzer.set_source(self)
 
+    def enable_log(self, type_name):
+        if isinstance(type_name, str):
+            type_name = [type_name]
+        for n in type_name:
+            if n not in self._type_names:
+                self._type_names.append(n)
+
     def run(self, data):
         results = {}
 

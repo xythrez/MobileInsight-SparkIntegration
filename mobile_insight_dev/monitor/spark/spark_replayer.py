@@ -111,7 +111,13 @@ class SparkReplayer(OfflineReplayer):
             self._analyzer_info[analyzer] = (id(analyzer), analyzer.__class__,
                                              init_args, collect_func,
                                              export_func)
-            analyzer.collect = collect.__get__(analyzer, analyzer.__class__)
+            try:
+                getattr(analyzer, 'collect')
+            except AttributeError:
+                self.log_info(('%s is a default analyzer, adding "collect()" '
+                              'function for data collection')
+                              % str(analyzer.__class__))
+                analyzer.collect = collect.__get__(analyzer, analyzer.__class__)
 
     def set_analyzer_callbacks(self, analyzer, init_args=None,
                                collect_func=None, export_func=None):
