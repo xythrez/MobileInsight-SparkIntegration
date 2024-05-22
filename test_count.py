@@ -39,6 +39,13 @@ class myAnalyzer(Analyzer):
                 if field.get('name') != None and 'nas_eps.nas_msg' in field.get('name'):
                     if field.get('showname') == 'NAS EPS Mobility Management Message Type: Attach accept (0x42)':
                         self.attach_accept_count += 1
+    
+    def collect(self):
+        total = 0
+        for result in self.source.spark_results[self]:
+            total += result.attach_accept_count
+        return total
+
 
 def main():
     src = SparkReplayer()
@@ -56,10 +63,7 @@ def main():
     # Register a collect_func using SparkReplayer.set_analyzer_callbacks() to
     # manually combine the results of each instance together
     collection = analyzer.collect()
-    total = 0
-    for result in collection:
-        total += result.attach_accept_count
-    print(total)
+    print(collection)
 
 
 if __name__ == '__main__':

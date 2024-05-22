@@ -106,6 +106,7 @@ class ByteArrayReplayer(OfflineReplayer):
 
 
 def parse_binary_data(content):
+    Analyzer.reset()
     src = ByteArrayReplayer(content)
     analyzer = myAnalyzer()
     analyzer.set_source(src)

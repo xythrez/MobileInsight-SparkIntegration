@@ -7,7 +7,7 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 from mobile_insight.monitor import OfflineReplayer
-from mobile_insight.analyzer import LteDlRetxAnalyzer
+from mobile_insight.analyzer import LteDlRetxAnalyzer, Analyzer
 import sys
 import time
 import timeit
@@ -70,6 +70,7 @@ class ByteArrayReplayer(OfflineReplayer):
 
 
 def parse_binary_data(content):
+    Analyzer.reset()
     src = ByteArrayReplayer(content)
     analyzer = LteDlRetxAnalyzer()
     analyzer.set_source(src)
