@@ -2,7 +2,7 @@ FROM apache/spark:3.5.1-scala2.12-java17-python3-r-ubuntu
 
 ARG MAX_THREADS=1
 ARG WS_VER=3.4.0
-ARG MI_COMMIT=6898f42
+ARG MI_COMMIT=c84dee8
 ARG WIRESHARK_URL=https://github.com/wireshark/wireshark/archive/refs/tags/v${WS_VER}.tar.gz
 ADD 00-cpp_compat.patch /build/00-cpp_compat.patch
 ADD 01-radio_bearer_config.patch /build/01-radio_bearer_config.patch
