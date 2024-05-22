@@ -2,9 +2,10 @@ FROM apache/spark:3.5.1-scala2.12-java17-python3-r-ubuntu
 
 ARG MAX_THREADS=1
 ARG WS_VER=3.4.0
-ARG MI_BRANCH=4b204e0
+ARG MI_COMMIT=6898f42
 ARG WIRESHARK_URL=https://github.com/wireshark/wireshark/archive/refs/tags/v${WS_VER}.tar.gz
 ADD 00-cpp_compat.patch /build/00-cpp_compat.patch
+ADD 01-radio_bearer_config.patch /build/01-radio_bearer_config.patch
 
 USER root:root
 
@@ -32,13 +33,15 @@ RUN set -ex; \
     cd /build; \
     wget "$WIRESHARK_URL" -nv -O "wireshark-$WS_VER.tar.xz"; \
     tar -xf "wireshark-$WS_VER.tar.xz"; \
-    git clone "https://github.com/mobile-insight/mobileinsight-core.git"; \
-    git -C mobileinsight-core checkout "$MI_BRANCH";
+    git clone "https://github.com/xythrez/mobileinsight-core.git"; \
+    git -C mobileinsight-core checkout "$MI_COMMIT";
 
 # Compile and install wireshark
 RUN set -ex; \
     cd "/build/wireshark-$WS_VER"; \
-    patch epan/epan.h < /build/00-cpp_compat.patch; \
+    for patch in /build/*.patch; do \
+        patch -p1 < "$patch"; \
+    done; \
     cmake -DBUILD_wireshark=OFF .; \
     make -j "$MAX_THREADS"; \
     make install; \
