@@ -15,9 +15,9 @@ from pyspark.sql.types import (
 )
 
 from mobile_insight.monitor import OfflineReplayer
-from . import group_by, collect_by
 from .decoder import SparkDecoder
 from .submonitor import SparkSubmonitor
+from . import group_by, collect_by
 
 
 def collect(self):
@@ -92,6 +92,7 @@ class SparkReplayer(OfflineReplayer):
         # immediately.
         # Instead, save the path and create a directory with the files
         # during execution.
+        path = os.path.abspath(path)
         os.makedirs(path, exist_ok=True)
         self._output_path = path
 
@@ -160,7 +161,8 @@ class SparkReplayer(OfflineReplayer):
 
         # Decode files
         decoded = (logs.rdd.map(lambda x:
-                                SparkDecoder(os.path.basename(x.path),
+                                SparkDecoder(os.getcwd(),
+                                             os.path.basename(x.path),
                                              self._output_path,
                                              self._sampling_rate,
                                              self._type_names,
@@ -177,7 +179,8 @@ class SparkReplayer(OfflineReplayer):
 
         # Partition the data, then launch submonitors and collect results
         results = (self._group_function(decoded).applyInPandas(
-            lambda x: SparkSubmonitor(list(self._analyzer_info.values()))
+            lambda x: SparkSubmonitor(os.getcwd(),
+                                      list(self._analyzer_info.values()))
             .run(x), '_ int, obj map<long, binary>')
                    .drop('_'))
 
