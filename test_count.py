@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -39,12 +40,14 @@ class myAnalyzer(Analyzer):
                 if field.get('name') != None and 'nas_eps.nas_msg' in field.get('name'):
                     if field.get('showname') == 'NAS EPS Mobility Management Message Type: Attach accept (0x42)':
                         self.attach_accept_count += 1
-    
-    def collect(self):
-        total = 0
-        for result in self.source.spark_results[self]:
-            total += result.attach_accept_count
-        return total
+
+    @classmethod
+    def spark_export(cls, analyzer):
+        return analyzer.attach_accept_count
+
+    @classmethod
+    def spark_collect(cls, list_of_results):
+        return sum(list_of_results)
 
 
 def main():
@@ -60,7 +63,7 @@ def main():
     # automatically get a new .collect() function that returns multiple
     # instances of itself containing the execution results.
     #
-    # Register a collect_func using SparkReplayer.set_analyzer_callbacks() to
+    # Register a spark_collect using SparkReplayer.set_analyzer_callbacks() to
     # manually combine the results of each instance together
     collection = analyzer.collect()
     print(collection)
