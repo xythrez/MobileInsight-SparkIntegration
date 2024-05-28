@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     lteAnalyzer = LteDlRetxAnalyzer()
     lteAnalyzer.set_source(src)
-    src.set_analyzer_callbacks(lteAnalyzer, collect_func=collect_func)
+    src.set_analyzer_callbacks(lteAnalyzer, spark_collect=collect_func)
     src.run()
     stats_list = lteAnalyzer.collect()
 
