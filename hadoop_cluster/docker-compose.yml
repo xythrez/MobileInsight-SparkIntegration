@@ -1,0 +1,19 @@
+services:
+  namenode:
+    image: apache/hadoop:3
+    hostname: namenode
+    command: ["hdfs", "namenode"]
+    volumes:
+      - "./mnt:/mnt"
+    ports:
+      - 9870:9870
+      - 8020:8020
+    env_file: .env
+    environment:
+        ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
+  datanode:
+    image: apache/hadoop:3
+    command: ["hdfs", "datanode"]
+    env_file: .env
+    depends_on:
+      - namenode
