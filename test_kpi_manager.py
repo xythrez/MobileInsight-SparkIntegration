@@ -1,37 +1,23 @@
 from mobile_insight_dev.monitor import SparkReplayer
-from mobile_insight.analyzer.kpi import KPIManager, KpiAnalyzer
-import cProfile
+from mobile_insight_dev.analyzer.kpi_manager_custom import CustomKPIManager
+from mobile_insight_dev.analyzer.track_cell_info_analyzer_custom import CustomTrackCellInfoAnalyzer
+from mobile_insight_dev.analyzer.kpi_analyzer_custom import CustomKPIAnalyzer
+from mobile_insight_dev.analyzer.attach_sr_analyzer_custom import CustomAttachSrAnalyzer
+from mobile_insight.analyzer.analyzer import Analyzer
 
+## test script for KPI Manager
 if __name__ == '__main__':
     src = SparkReplayer()
-    src.set_input_path("./logs/volte_sample.mi2log")
+    # src.set_input_path("./logs/attach_sample.mi2log")     # single log 
+    src.set_input_path("./logs/attach_samples")    # multiple logs
 
-    kpi_manager = KPIManager()
+    # use new customKPIManager
+    kpi_manager = CustomKPIManager()
 
-    # enable specific kpis: general, mobility, retainability, integirty
-    kpi_manager.enable_kpi("KPI.Accessibility.DEDICATED_BEARER_SR_QCI1_REQ", periodicity='10m')
-    kpi_manager.enable_kpi("KPI.Accessibility.DEDICATED_BEARER_SR_QCI1_SR", periodicity='2h')
-    kpi_manager.enable_kpi("KPI.Accessibility.RRC_SUC")
-    kpi_manager.enable_kpi("KPI.Accessibility.RRC_SR", cell='22205186')
-    # kpi_manager.enable_kpi("KPI.Accessibility.SR_SUC", periodicity='1h')
-    kpi_manager.enable_kpi("KPI.Accessibility.SR_SR", periodicity='1h')
-    # kpi_manager.enable_kpi("KPI.Accessibility.ATTACH_SUC")
+    # enable one specific kpi: functionality only adapted for ATTACH_SR
     kpi_manager.enable_kpi("KPI.Accessibility.ATTACH_SR")
 
-    # Test Mobility KPIs
-    # kpi_manager.enable_kpi("KPI.Mobility.HO_TOTAL")
-    kpi_manager.enable_kpi("KPI.Mobility.HO_SR")
-    # kpi_manager.enable_kpi("KPI.Mobility.HO_TOTAL", periodicity='1h')
-    # kpi_manager.enable_kpi("KPI.Mobility.HO_FAILURE", periodicity='1h')
-    kpi_manager.enable_kpi("KPI.Mobility.TAU_SR", periodicity='1h')
-    # kpi_manager.enable_kpi("KPI.Mobility.TAU_REQ", periodicity='1h')
-
-    # Test Retainability KPIs
-    kpi_manager.enable_kpi("KPI.Retainability.RRC_AB_REL") 
-
-    # Test Integrity KPIs
-    kpi_manager.enable_kpi("KPI.Integrity.DL_TPUT") 
-
+    # connect customKPIManager to sparkReplayer
     kpi_manager.set_source(src)
 
     src.run()

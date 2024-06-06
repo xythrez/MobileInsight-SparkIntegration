@@ -18,6 +18,7 @@ from mobile_insight.monitor import OfflineReplayer
 from .decoder import SparkDecoder
 from .submonitor import SparkSubmonitor
 from . import group_by, collect_by
+from mobile_insight_dev.analyzer.kpi_manager_custom import CustomKPIManager
 
 
 def _collect(self):
@@ -266,6 +267,11 @@ class SparkReplayer(OfflineReplayer):
             os.getcwd(),
             list(self._analyzer_info.values()),
         ]
+
+        # Logic to handle KPIManager analyzer by removing dependency analyzers
+        if any(isinstance(key, CustomKPIManager) for key in self._analyzer_info.keys()):
+            self._analyzer_info = {k: v for k, v in self._analyzer_info.items() if isinstance(k, CustomKPIManager)}
+
         results = (self._group_function(decoded).applyInPandas(
             lambda x: SparkSubmonitor(*args).run(x),
             '_ int, obj map<long, binary>').drop('_'))
