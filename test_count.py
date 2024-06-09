@@ -5,7 +5,7 @@ except ImportError:
     import xml.etree.ElementTree as ET
 from mobile_insight.analyzer.analyzer import Analyzer
 from mobile_insight.monitor.monitor import Event
-from mobile_insight_dev.monitor import SparkReplayer
+from mobile_insight.monitor import SparkReplayer
 
 class myAnalyzer(Analyzer):
     def __init__(self):
@@ -25,7 +25,7 @@ class myAnalyzer(Analyzer):
         source.enable_log("LTE_NAS_EMM_OTA_Incoming_Packet")
         #source.enable_log("LTE_NAS_EMM_OTA_Outgoing_Packet")
         # source.enable_log("LTE_RRC_OTA_Packet")
-        # source.enable_log_all()    
+        # source.enable_log_all()
 
     def __msg_callback(self, msg):
         if msg.type_id == "LTE_NAS_ESM_OTA_Incoming_Packet" or msg.type_id == "LTE_NAS_EMM_OTA_Incoming_Packet":
@@ -49,10 +49,14 @@ class myAnalyzer(Analyzer):
     def spark_collect(cls, list_of_results):
         return sum(list_of_results)
 
+def group(dataframe):
+    res = dataframe.repartition(32).groupby('file_path')
+    return res
 
 def main():
     src = SparkReplayer()
-    src.set_input_path("./logs")
+    src.set_input_path("logs")
+    src.set_group_function(group)
 
     analyzer = myAnalyzer()
     analyzer.set_source(src)  # bind with the monitor
